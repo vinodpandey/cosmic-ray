@@ -5,6 +5,7 @@ import uuid
 
 from cosmic_ray.ast import get_ast, ast_nodes
 import cosmic_ray.modules
+from cosmic_ray.config import ConfigDict
 from cosmic_ray.work_item import MutationSpec, ResolvedMutationSpec, WorkItem
 from cosmic_ray.plugins import get_operator
 from cosmic_ray.work_db import WorkDB
@@ -12,8 +13,11 @@ from cosmic_ray.work_db import WorkDB
 log = logging.getLogger()
 
 
-def _all_work_items(module_paths, operator_names) -> Iterable[WorkItem]:
+def _all_work_items(module_paths, operator_names, config: ConfigDict = None) -> Iterable[WorkItem]:
     "Iterable of all WorkItems for the given inputs."
+    start_limit = config.get("start-limit", 0) if config else 0
+    end_limit = config.get("end-limit", 0) if config else 0
+
     for module_path in module_paths:
         module_ast = get_ast(module_path)
 
@@ -27,18 +31,30 @@ def _all_work_items(module_paths, operator_names) -> Iterable[WorkItem]:
             )
 
             for occurrence, (start_pos, end_pos) in enumerate(positions):
-                mutation = ResolvedMutationSpec(
-                    module_path=str(module_path),
-                    operator_name=op_name,
-                    occurrence=occurrence,
-                    start_pos=start_pos,
-                    end_pos=end_pos,
-                )
+                if start_limit and end_limit:
+                    if start_pos[0] >= start_limit and end_pos[0] <= end_limit:
+                        mutation = ResolvedMutationSpec(
+                            module_path=str(module_path),
+                            operator_name=op_name,
+                            occurrence=occurrence,
+                            start_pos=start_pos,
+                            end_pos=end_pos,
+                        )
 
-                yield WorkItem.single(job_id=uuid.uuid4().hex, mutation=mutation)
+                        yield WorkItem.single(job_id=uuid.uuid4().hex, mutation=mutation)
+                else:
+                    mutation = ResolvedMutationSpec(
+                        module_path=str(module_path),
+                        operator_name=op_name,
+                        occurrence=occurrence,
+                        start_pos=start_pos,
+                        end_pos=end_pos,
+                    )
+
+                    yield WorkItem.single(job_id=uuid.uuid4().hex, mutation=mutation)
 
 
-def init(module_paths, work_db: WorkDB):
+def init(module_paths, work_db: WorkDB, config: ConfigDict = None):
     """Clear and initialize a work-db with work items.
 
     Any existing data in the work-db will be cleared and replaced with entirely
@@ -53,4 +69,4 @@ def init(module_paths, work_db: WorkDB):
     operator_names = list(cosmic_ray.plugins.operator_names())
 
     work_db.clear()
-    work_db.add_work_items(_all_work_items(module_paths, operator_names))
+    work_db.add_work_items(_all_work_items(module_paths, operator_names, config))
