@@ -95,8 +95,15 @@ On test completion, run below command to generate html report
 
    cr-html cosmic-ray.sqlite > report.html
 
-For running the test again for different file or different line numbers, update config file and execute
-step 3 onwards.
+For running the test again for different file or different line numbers:
+
+1. Update config file with updated values for  `module-path` and `test-command`
+
+2. Update `start-limit` and `start-limit` accordingly to limit testing scope
+
+3. Delete existing `report.html` and `cosmic-ray.sqlite`
+
+4. Continue with Initialization step (step 3) onwards
 
 
 Cosmic Ray: mutation testing for Python
