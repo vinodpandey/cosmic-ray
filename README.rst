@@ -99,7 +99,7 @@ For running the test again for different file or different line numbers:
 
 1. Update config file with updated values for  `module-path` and `test-command`
 
-2. Update `start-limit` and `start-limit` accordingly to limit testing scope
+2. Update `start-limit` and `end-limit` accordingly to limit testing scope
 
 3. Delete existing `report.html` and `cosmic-ray.sqlite`
 
